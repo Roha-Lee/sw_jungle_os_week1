@@ -1,9 +1,14 @@
 #ifndef FILESYS_FILE_H
 #define FILESYS_FILE_H
 
-#include "filesys/off_t.h"
+#define	STDIN_FILENO	0
+#define	STDOUT_FILENO	1
+#define MAX_FD_NUM	(1<<9)
 
+#include "filesys/off_t.h"
+#include "threads/synch.h"
 struct inode;
+struct lock filesys_lock;
 
 /* Opening and closing files. */
 struct file *file_open (struct inode *);

@@ -4,6 +4,7 @@
 #include <debug.h>
 #include <list.h>
 #include <stdint.h>
+#include "threads/synch.h"
 #include "threads/interrupt.h"
 #ifdef VM
 #include "vm/vm.h"
@@ -127,10 +128,22 @@ struct thread {
 		semaphore wait list에 들어가려면 block state이다. 
 		스레드가 동시에 두가지 state를 가질 수 없으므로 elem을 통해 두가지 작업을 수행해도 문제가 생기지 않는다. 
 	*/ 
-#ifdef USERPROG
+// #ifdef USERPROG
 	/* Owned by userprog/process.c. */
 	uint64_t *pml4;                     /* Page map level 4 */
-#endif
+	// [Project 2]
+	int exit_status;
+	struct file **fd_table;
+	struct list child_list;
+	struct list_elem child_elem;
+	struct semaphore sema_fork;
+	struct semaphore sema_wait;
+	struct semaphore sema_free;
+	struct intr_frame parent_if;
+	bool is_waited;
+	struct file * executable;
+// #endif
+
 #ifdef VM
 	/* Table for whole virtual memory owned by thread. */
 	struct supplemental_page_table spt;

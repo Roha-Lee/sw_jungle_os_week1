@@ -216,6 +216,17 @@ thread_create (const char *name, int priority,
 	// allocate_tid는 카운터이므로 1증가된 값 반환 
 	tid = t->tid = allocate_tid ();
 
+	// t->fd_table = palloc_get_page (PAL_ZERO);
+	t->fd_table = palloc_get_page (PAL_ZERO);
+	if(t->fd_table == NULL){
+		palloc_free_page(t);
+		return TID_ERROR;
+	}
+
+	t->fd_table[0] = 1; // not null
+	t->fd_table[1] = 1;
+
+	list_push_back(&thread_current()->child_list, &t->child_elem);
 	/* Call the kernel_thread if it scheduled.
 	 * Note) rdi is 1st argument, and rsi is 2nd argument. */
 	// tf라는게 intr_frame인데, 이건 인터럽트 걸려서 context switching이 발생하는 작업이 저장된다. 
@@ -513,6 +524,15 @@ init_thread (struct thread *t, const char *name, int priority) {
 	t->awake_time = 0;
 	t->wait_on_lock = NULL;
 	list_init(&t->donations);
+
+	// [Project 2]
+	t->exit_status = 0;
+	list_init(&t->child_list);
+	sema_init(&t->sema_fork, 0);
+	sema_init(&t->sema_wait, 0);
+	sema_init(&t->sema_free, 0);
+	t->is_waited = false;
+	t->executable = NULL;
 }
 
 /* Chooses and returns the next thread to be scheduled.  Should
@@ -728,7 +748,12 @@ void test_max_priority (void) {
 	}
 	int highest_priority = list_entry(list_front(&ready_list), struct thread, elem)->priority;
 	if (highest_priority > run_priority){
-		thread_yield();
+		if (intr_context()){
+			intr_yield_on_return();
+		}
+		else{		
+			thread_yield();
+		}
 	}
 }
 
